@@ -1,5 +1,7 @@
 import re
 
+__all__ = ['Tomd', 'convert']
+
 MARKDOWN = {
     'h1': ('\n# ', '\n'),
     'h2': ('\n## ', '\n'),
@@ -20,29 +22,41 @@ MARKDOWN = {
     'inline_p': ('', ''),
     'inline_p_with_out_class': ('', ''),
     'b': ('**', '**'),
-    'i': ('*', '*')
+    'i': ('*', '*'),
+    'del': ('~~', '~~'),
+    'hr': ('\n---', '\n\n'),
+    'thead': ('\n', '|------\n'),
+    'tbody': ('\n', '\n'),
+    'td': ('|', ''),
+    'th': ('|', ''),
+    'tr': ('', '\n')
 }
 
-BlOCK_ELEMENTS = (
-    ('h1', '<h1.*?>(.*?)</h1>'),
-    ('h2', '<h2.*?>(.*?)</h2>'),
-    ('h3', '<h3.*?>(.*?)</h3>'),
-    ('h4', '<h4.*?>(.*?)</h4>'),
-    ('h5', '<h5.*?>(.*?)</h5>'),
-    ('h6', '<h6.*?>(.*?)</h6>'),
-    ('hr', '<hr/>'),
-    ('blockquote', '<blockquote.*?>(.*?)</blockquote>'),
-    ('ul', '<ul.*?>(.*?)</ul>'),
-    ('ol', '<ol.*?>(.*?)</ol>'),
-    ('block_code', '<pre.*?><code.*?>(.*?)</code></pre>'),
-    ('p', '<p\s.*?>(.*?)</p>'),
-    ('p_with_out_class', '<p>(.*?)</p>'),
-    ('b', '<b>(.*?)</b>'),
-    ('i', '<i>(.*?)</i>'))
+BlOCK_ELEMENTS = {
+    'h1': '<h1.*?>(.*?)</h1>',
+    'h2': '<h2.*?>(.*?)</h2>',
+    'h3': '<h3.*?>(.*?)</h3>',
+    'h4': '<h4.*?>(.*?)</h4>',
+    'h5': '<h5.*?>(.*?)</h5>',
+    'h6': '<h6.*?>(.*?)</h6>',
+    'hr': '<hr/>',
+    'blockquote': '<blockquote.*?>(.*?)</blockquote>',
+    'ul': '<ul.*?>(.*?)</ul>',
+    'ol': '<ol.*?>(.*?)</ol>',
+    'block_code': '<pre.*?><code.*?>(.*?)</code></pre>',
+    'p': '<p\s.*?>(.*?)</p>',
+    'p_with_out_class': '<p>(.*?)</p>',
+    'thead': '<thead.*?>(.*?)</thead>',
+    'tr': '<tr>(.*?)</tr>'
+}
 
 INLINE_ELEMENTS = {
+    'td': '<td>(.*?)</td>',
+    'tr': '<tr>(.*?)</tr>',
+    'th': '<th>(.*?)</th>',
     'b': '<b>(.*?)</b>',
     'i': '<i>(.*?)</i>',
+    'del': '<del>(.*?)</del>',
     'inline_p': '<p\s.*?>(.*?)</p>',
     'inline_p_with_out_class': '<p>(.*?)</p>',
     'code': '<code.*?>(.*?)</code>',
@@ -87,38 +101,53 @@ class Element:
                 self.content = re.sub(pattern, '- \g<1>', self.content)
             elif self.tag == 'ol' and tag == 'li':
                 self.content = re.sub(pattern, '1. \g<1>', self.content)
+            elif self.tag == 'thead' and tag == 'tr':
+                self.content = re.sub(pattern, '\g<1>\n', self.content.replace('\n', ''))
+            elif self.tag == 'tr' and tag == 'th':
+                self.content = re.sub(pattern, '|\g<1>', self.content.replace('\n', ''))
+            elif self.tag == 'tr' and tag == 'td':
+                self.content = re.sub(pattern, '|\g<1>', self.content.replace('\n', ''))
             else:
                 wrapper = MARKDOWN.get(tag)
                 self.content = re.sub(pattern, '{}\g<1>{}'.format(wrapper[0], wrapper[1]), self.content)
 
 
 class Tomd:
-    def __init__(self, html):
+    def __init__(self, html='', options=None):
         self.html = html
-        self._elements = []
-        self._markdown = None
-        self.parse_block()
-        for index, element in enumerate(DELETE_ELEMENTS):
-            self._markdown = re.sub(element, '', self._markdown)
+        self.options = options
+        self._markdown = ''
 
-    def parse_block(self):
-        for tag, pattern in BlOCK_ELEMENTS:
-            for m in re.finditer(pattern, self.html, re.I | re.S | re.M):
+    def convert(self, html, options=None):
+        elements = []
+        for tag, pattern in BlOCK_ELEMENTS.items():
+            for m in re.finditer(pattern, html, re.I | re.S | re.M):
                 element = Element(start_pos=m.start(),
                                   end_pos=m.end(),
                                   content=''.join(m.groups()),
                                   tag=tag,
                                   is_block=True)
                 can_append = True
-                for e in self._elements:
+                for e in elements:
                     if e.start_pos < m.start() and e.end_pos > m.end():
                         can_append = False
+                    elif e.start_pos > m.start() and e.end_pos < m.end():
+                        elements.remove(e)
                 if can_append:
-                    self._elements.append(element)
+                    elements.append(element)
 
-        self._elements.sort(key=lambda element: element.start_pos)
-        self._markdown = ''.join([str(e) for e in self._elements])
+        elements.sort(key=lambda element: element.start_pos)
+        self._markdown = ''.join([str(e) for e in elements])
+
+        for index, element in enumerate(DELETE_ELEMENTS):
+            self._markdown = re.sub(element, '', self._markdown)
+        return self._markdown
 
     @property
     def markdown(self):
+        self.convert(self.html, self.options)
         return self._markdown
+
+
+_inst = Tomd()
+convert = _inst.convert

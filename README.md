@@ -1,5 +1,19 @@
 # tomd
-Convert HTML to Markdown.
+
+![[License](https://pypi.python.org/pypi/tomd/)](https://img.shields.io/pypi/l/tomd.svg)
+![[Pypi](https://pypi.python.org/pypi/tomd/)](https://img.shields.io/pypi/v/tomd.svg)
+![[Python](https://pypi.python.org/pypi/tomd/)](https://img.shields.io/pypi/pyversions/tomd.svg)
+
+When crawling online articles such as news, blogs, etc. I want to save them in markdown files but not databases.
+Tomd has the ability of converting a HTML that converted from markdown. If a HTML can't be described by markdown, tomd can't convert it right.
+Tomd is a python tool.
+
+
+## Road map
+
+- [x] Basic support
+- [ ] Full support(Nested list)
+- [ ] Command line tool
 
 ## Installation
 
@@ -10,9 +24,11 @@ Convert HTML to Markdown.
 Input
 
 ```python
-from tomd import Tomd
+import tomd
 
-Tomd("<h1>h1</h1>").markdown
+tomd.Tomd('<h1>h1</h1>').markdown
+# or
+tomd.convert('<h1>h1</h1>')
 ```
 
 Output
@@ -52,11 +68,30 @@ html="""
 <p><code>inline code</code></p>
 <pre><code>block code</code></pre>
 <p>
+<del>del</del>
 <b>bold</b>
 <i>italic</i>
 <b><i>bold italic</i></b>
-
 </p>
+
+<hr/>
+
+<table>
+<thead>
+<tr>
+<th>th1</th>
+<th>th2</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>td</td>
+<td>td</td>
+</tr>
+<tr>
+<td>td</td>
+<td>td</td>
+</tr></tbody></table>
 """
 
 
@@ -95,8 +130,22 @@ paragraph
 
 `inline code`
 
+
+block code
+
+
+~~del~~
 **bold**
 *italic*
 ***bold italic***
+
+
+---
+
+
+|th1|th2
+|------
+|td|td
+|td|td
 
 ```

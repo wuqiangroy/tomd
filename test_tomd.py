@@ -1,5 +1,5 @@
 from tomd import Tomd
-
+import tomd
 string = """
 <h1>h1</h1>
 <h2>h2</h2>
@@ -25,11 +25,31 @@ string = """
 <p><code>inline code</code></p>
 <pre><code>block code</code></pre>
 <p>
+<del>del</del>
 <b>bold</b>
 <i>italic</i>
 <b><i>bold italic</i></b>
-
 </p>
+
+<hr/>
+
+<table>
+<thead>
+<tr>
+<th>th1</th>
+<th>th2</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>td</td>
+<td>td</td>
+</tr>
+<tr>
+<td>td</td>
+<td>td</td>
+</tr></tbody></table>
 """
 
 print(Tomd(string).markdown)
+print(tomd.convert(string))
